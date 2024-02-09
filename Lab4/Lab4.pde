@@ -3,11 +3,13 @@ import java.util.*;
 PGraphics background, foreground, subject;
 Thread bgDraw, fgDraw, subDraw;
 StarMap starmap;
+DynScene scene;
 
 void setup() {
     size(1000, 900);
     frameRate(8);
     starmap = new StarMap();
+    scene = new DynScene();
     background = createGraphics(1000, 900);
     foreground = createGraphics(1000, 900);
     subject = createGraphics(1000, 900);
@@ -21,6 +23,9 @@ void setup() {
 
 void draw() {
     background(0);
+
+    animateObjects();
+
     image(background, 0, 0);
     image(foreground, 0, 0);
     image(subject, 0, 0);
@@ -73,15 +78,15 @@ void prepareBackground() {
     background.updatePixels();
 
     //generating stars from the map established earlier
-    int minGap = 2; //min number of pixels between each star.
-    int starSize = 4; //max size of stars
-    float starWeight = 0.05; //influences the number of stars generated, higher is more.
-
+    int minGap = 4; //min number of pixels between each star.
+    int starMax = 6; //max size of stars
+    int starMin = 2; //min size of stars
+    float starWeight = 2; //influences the number of stars generated, higher is more.
     for(int y = 0; y < background.height; y++) {
         int backy = y*background.width;
         for (int x = 0; x < background.width; x++) {
             //exponential random function so stars are clustered around light points.
-            float val = (float) Math.log(Math.random())/((float) -normalize(map[backy+x],mapmin,mapmax)*starWeight);
+            float val = (float) Math.log(Math.random())/((float) -normalize(map[backy+x],mapmin,mapmax)*(starWeight*0.01));
             if (val < 0.1) {
                 //testing if the generated star is too close to an existing one (as defined by minGap)
                 //this is pretty slow, because it reduces this loop to O(N^3) but other approaches like GLSL compute shaders would be a bit too time intensive for me to work on right now.
@@ -89,9 +94,9 @@ void prepareBackground() {
                 float dist = distance(x,nearest.posX(),y,nearest.posY());
                 if (dist > minGap) {
                     UStar star;
-                    int colOff = (int) Math.round(Math.random() * (105 - 5) + 5);
-                    color col = color(150,150,150+colOff);
-                    int size = (int) Math.round(Math.random() * (starSize - 1) + 1);
+                    int colOff = (int) Math.round(Math.random() * (55 - 5) + 5);
+                    color col = color(200,200,200+colOff);
+                    int size = (int) Math.round(Math.random() * (starMax - starMin) + starMin);
                     star = new UStar(x,y,size,col);
                     starmap.add(star);
                 }
@@ -133,9 +138,20 @@ void prepareForeground() {
     foreground.endShape(CLOSE);
 
     //more perlin noise for splatter
+    /*
+    * this function causes some strange behavior with the star generation, I think it has to do with simultaneous sampling of the noise() function since it wasnt set up for asyn operation.
+    * consider implementing a custom perlin noise sampler to sidestep this issue.
+    * 
+    * Presently, suspending the background thread until the splatter is drawn sidesteps the issue (the reverse did not work) however this somewhat defeats the point of async drawing,
+    * even if it still retains some advantages.
+    */
+    bgDraw.suspend();
     int itterations = 4;
     for (int i = 0; i < itterations; i++) {
         foreground.loadPixels();
+            int redoff = (int) Math.round(Math.random()*40);
+            int greenoff = (int) Math.round(Math.random()*40);
+            int blueoff = (int) Math.round(Math.random()*20);
         for(int y = 0; y < foreground.height; y++) {
             //precomputing all y values to help save on render time
             float prey1 = y*freq1;
@@ -163,17 +179,23 @@ void prepareForeground() {
                 if (c == 0) {
                     fcol = col;
                 }
-                foreground.pixels[backy+x] = color(red(fcol),green(fcol),blue(fcol),alph);
+                foreground.pixels[backy+x] = color(red(fcol)-redoff,green(fcol)-greenoff,blue(fcol)-blueoff,alph);
             }
         }
         foreground.updatePixels();
     }
     foreground.filter(BLUR, 1.5);
-
     foreground.endDraw();
+    bgDraw.resume();
 }
 
 void prepareSubject() {
+    //prepare static objects
+    
+    //prepare dynamic objects
+}
+
+void animateObjects() {
 
 }
 
@@ -278,5 +300,64 @@ class StarMap {
 
     public UStar retrieve(int index) {
         return starMap.get(index);
+    }
+}
+
+class DynObject {
+    private PVector pos;
+    private List<PVector> verts;
+    private color fill;
+
+    public DynObject() {
+        this.pos = new PVector(0,0);
+        this.verts = new ArrayList<PVector>();
+        this.fill = color(0,0,0); 
+    }
+
+    public DynObject(PVector pos, List<PVector> vertexes, color fill) {
+        this.pos = pos;
+        this.verts = vertexes;
+        this.fill = fill;
+    }
+
+    //render to screen
+    public void render() {
+
+    }
+
+    //render to a specific buffer
+    public void render(PGraphics buffer) {
+        
+    }
+
+    //absolute movement
+    public void move(PVector v) {
+
+    }
+
+    //relative movement
+    public void nudge(PVector v) {
+
+    }
+}
+
+class ObjGroup extends DynObject {
+    private List<DynObject> list;
+
+    public ObjGroup() {
+        super();
+        list = new ArrayList<DynObject>();
+    }
+
+    public void add(DynObject obj) {
+        list.add(obj);
+    }
+}
+
+class DynScene {
+    private List<DynObject> list;
+
+    public DynScene() {
+        list = new ArrayList<DynObject>();
     }
 }
