@@ -3,13 +3,13 @@ import java.util.*;
 PGraphics background, foreground, subject;
 Thread bgDraw, fgDraw, subDraw;
 StarMap starmap;
-DynScene scene;
+DynScene dyscene;
 
 void setup() {
     size(1000, 900);
     frameRate(8);
     starmap = new StarMap();
-    scene = new DynScene();
+    dyscene = new DynScene();
     background = createGraphics(1000, 900);
     foreground = createGraphics(1000, 900);
     subject = createGraphics(1000, 900);
@@ -19,6 +19,7 @@ void setup() {
     bgDraw.start();
     fgDraw.start();
     subDraw.start();
+
 }
 
 void draw() {
@@ -43,7 +44,7 @@ void prepareBackground() {
     freq1 = 0.003;
     freq2 = 0.01;
 
-
+    //fgDraw.suspend();
     //implementation of 2-layer perlin noise
     //loosely based on this article: https://rtouti.github.io/graphics/perlin-noise-algorith
     background.loadPixels();
@@ -76,6 +77,7 @@ void prepareBackground() {
         }
     }
     background.updatePixels();
+    //fgDraw.resume();
 
     //generating stars from the map established earlier
     int minGap = 4; //min number of pixels between each star.
@@ -137,15 +139,15 @@ void prepareForeground() {
     foreground.vertex(0, 900);
     foreground.endShape(CLOSE);
 
-    //more perlin noise for splatter
     /*
+    * more perlin noise for splatter
+    *
     * this function causes some strange behavior with the star generation, I think it has to do with simultaneous sampling of the noise() function since it wasnt set up for asyn operation.
     * consider implementing a custom perlin noise sampler to sidestep this issue.
     * 
     * Presently, suspending the background thread until the splatter is drawn sidesteps the issue (the reverse did not work) however this somewhat defeats the point of async drawing,
-    * even if it still retains some advantages.
+    * even if it still retains some advantages due to the subject drawing being async.
     */
-    bgDraw.suspend();
     int itterations = 4;
     for (int i = 0; i < itterations; i++) {
         foreground.loadPixels();
@@ -186,17 +188,32 @@ void prepareForeground() {
     }
     foreground.filter(BLUR, 1.5);
     foreground.endDraw();
-    bgDraw.resume();
 }
 
 void prepareSubject() {
-    //prepare static objects
-    
     //prepare dynamic objects
+    //Left Foot
+    List<PVector> LFP = Arrays.asList(new PVector(383,700),new PVector(433,700),new PVector(447,768),new PVector(321,790),new PVector(285,786),new PVector(285,759));
+    color LFC = color(195,195,195);
+    PVector LFPOS = new PVector(381, 747);
+    DynObject LF = new DynObject(LFPOS, AbsToRel(LFPOS, LFP), LFC, -1);
+    dyscene.add(LF);
+
+    //Right Foot
+    List<PVector> RFP = Arrays.asList(new PVector(709,742), new PVector(723,735), new PVector(743,712), new PVector(752,686), new PVector(766,768), new PVector(755,813), new PVector(710,823), new PVector(681,815), new PVector(673,798), new PVector(686,776), new PVector(697,772));
+    color RFC = color(195,195,195);
+    PVector RFPOS = new PVector(730, 757);
+    DynObject RF = new DynObject(RFPOS, AbsToRel(RFPOS, RFP), RFC, 1);
+    dyscene.add(RF);
+
+    dyscene.sort();
+    println(dyscene.toString());
 }
 
 void animateObjects() {
-
+    subject.beginDraw();
+    dyscene.renderAll(subject);
+    subject.endDraw();
 }
 
 public float normalize(float val, float min, float max) {
@@ -230,6 +247,14 @@ public float shunt(float val, float min, float max) {
         temp = min;
     }
     return temp;
+}
+
+public List<PVector> AbsToRel(PVector pos, List<PVector> list) {
+    List<PVector> relList = new ArrayList<PVector>();
+    for (PVector item : list) {
+        relList.add(new PVector(item.x-pos.x,item.y-pos.y));
+    }
+    return relList;
 }
 
 class UStar {
@@ -303,42 +328,69 @@ class StarMap {
     }
 }
 
-class DynObject {
-    private PVector pos;
-    private List<PVector> verts;
+class DynObject implements Comparable<DynObject>{
+    private PVector position; //origin of the object, can be any point in space that all points are relative to.
+    private List<PVector> verts; //relative to positon in space
     private color fill;
+    private int layer; //determines order of rendering
 
     public DynObject() {
-        this.pos = new PVector(0,0);
+        this.position = new PVector(0,0);
         this.verts = new ArrayList<PVector>();
         this.fill = color(0,0,0); 
+        this.layer = 0;
     }
 
-    public DynObject(PVector pos, List<PVector> vertexes, color fill) {
-        this.pos = pos;
+    public DynObject(PVector position, List<PVector> vertexes, color fill, int layer) {
+        this.position = position;
         this.verts = vertexes;
         this.fill = fill;
+        this.layer = layer;
     }
 
     //render to screen
     public void render() {
-
+        fill(this.fill);
+        beginShape();
+        for (PVector vert : verts) {
+            vertex(vert.x+position.x,vert.y+position.y);
+        }
+        endShape(CLOSE);
     }
 
     //render to a specific buffer
     public void render(PGraphics buffer) {
-        
+        buffer.fill(this.fill);
+        buffer.beginShape();
+        for (PVector vert : verts) {
+            buffer.vertex(vert.x+position.x,vert.y+position.y);
+        }
+        buffer.endShape(CLOSE);
     }
 
     //absolute movement
     public void move(PVector v) {
-
+        position = v;
     }
 
     //relative movement
     public void nudge(PVector v) {
-
+        position.x += v.x;
+        position.y += v.y;
     }
+
+    public int getLayer() {
+        return layer;
+    }
+
+    public PVector getPos() {
+        return position;
+    }
+
+  @Override
+	public int compareTo(DynObject d) {
+		return this.layer - d.getLayer();
+	} 
 }
 
 class ObjGroup extends DynObject {
@@ -349,15 +401,119 @@ class ObjGroup extends DynObject {
         list = new ArrayList<DynObject>();
     }
 
+    public ObjGroup(DynObject... objs) {
+        super();
+        list = Arrays.asList(objs);
+    }
+
+    @Override
+    public void render() {
+        for (DynObject obj : list) {
+            obj.render();
+        }
+    }
+
+    @Override
+    public void render(PGraphics buffer) {
+        for (DynObject obj : list) {
+            obj.render(buffer);
+        }
+    }
+
     public void add(DynObject obj) {
         list.add(obj);
+    }
+
+    @Override
+    public void move(PVector v) {
+        super.move(v);
+        for (DynObject item : list) {
+            item.move(v);
+        }
+    }
+
+    @Override
+    public void nudge(PVector v) {
+        super.nudge(v);
+        for (DynObject item : list) {
+            item.nudge(v);
+        }
     }
 }
 
 class DynScene {
     private List<DynObject> list;
+    private int minLayer;
+    private int maxLayer;
 
     public DynScene() {
         list = new ArrayList<DynObject>();
+        minLayer = 99999999;
+        maxLayer = -99999999;
+    }
+
+    public void add(DynObject o) {
+        int layer = o.getLayer();
+        if (layer > maxLayer) {
+            maxLayer = layer;
+        }
+        if (layer < minLayer) {
+            minLayer = layer;
+        }
+        list.add(o);
+    }
+
+    //this is required to be run before rendering can be performed.
+    public void sort() {
+        Collections.sort(list);
+    }
+
+    public void renderAll() {
+        for (int i = minLayer; i <= maxLayer; i++) {        
+            for (DynObject obj : list) {
+                if (obj.getLayer() == i) {
+                    obj.render();
+                }
+            }
+        }
+    }
+
+    public void renderAll(PGraphics buffer) {
+        for (int i = minLayer; i <= maxLayer; i++) { 
+          for (DynObject obj : list) {
+              if (obj.getLayer() == i) {
+                  obj.render(buffer);
+              }
+          }
+        }
+    }
+
+    public void renderLayer(int renderTarget) {
+        for (DynObject obj : list) {
+            if (obj.getLayer() == renderTarget) {
+                obj.render();
+            }
+        }
+    }
+
+    public void renderLayer(int renderTarget, PGraphics buffer) {
+        for (DynObject obj : list) {
+            if (obj.getLayer() == renderTarget) {
+                obj.render(buffer);
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        String out = "{";
+        for (DynObject obj : list) {
+            PVector pos = obj.getPos();
+            out += "["+pos.x+","+pos.y+", "+obj.getLayer()+"] ";
+        }
+        out += "[MinLayer: "+minLayer+",";
+        out += "MaxLayer: "+maxLayer+"]";
+        out += "}";
+        return out;
     }
 }
