@@ -20,7 +20,6 @@ void setup() {
     bgDraw.start();
     fgDraw.start();
     subDraw.start();
-
 }
 
 void draw() {
