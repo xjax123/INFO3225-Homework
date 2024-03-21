@@ -24,6 +24,7 @@ void setup() {
     frameRate(60);
     hud = createGraphics(1920,1061,P3D);
     hud.smooth(8);
+    hud.ortho();
     main = createGraphics(1920,1061,P3D);
     main.smooth(8);
     setupShapes();
@@ -47,22 +48,25 @@ void draw() {
 
 void setupShapes() {
     noStroke();
-
     //Background Set
     PShape setMain = createShape(GROUP);
     //Floor
     fill(#55342B);
+    ambient(#55342B);
     PShape floor = createShape(BOX,500,8,300);
     floor.translate(0,0,50);
 
     //carpet
     fill(#513e40);
+    ambient(#513e40);
     PShape carpet = createShape(GROUP);
     PShape outerRing = genCylinder(30,100,100,2);
     fill(#4b5e6c);
+    ambient(#4b5e6c);
     PShape middleRing = genCylinder(30,80,80,2);
     middleRing.translate(0,0,0.1);
     fill(#403f5f);
+    ambient(#403f5f);
     PShape centerRing = genCylinder(30,40,40,2);
     centerRing.translate(0,0,0.2);
     
@@ -75,6 +79,7 @@ void setupShapes() {
     carpet.translate(0,-5,20);
     //Wall
     fill(#a67c52);
+    ambient(#a67c52);
     PShape wallMain = createShape(GROUP);
     PShape wallSeg1 = createShape(BOX,500,50,8);
     wallSeg1.translate(0,-25,-96);
@@ -92,6 +97,7 @@ void setupShapes() {
     //Window Frame
     //Its a french window, aka a pain in my ass.
     fill(#F6F8E8);
+    ambient(#F6F8E8);
     PShape winBottom = genHex(new PVector(-125,0,0),new PVector(-60,0,-50),new PVector(60,0,-50),new PVector(125,0,0),new PVector(-125,-6,0),new PVector(-60,-6,-50),new PVector(60,-6,-50),new PVector(125,-6,0));
     PShape winBottomBox = createShape(BOX,250,6,8);
     winBottomBox.translate(0,-3,4);
@@ -126,7 +132,8 @@ void setupShapes() {
     winPillarCross3.translate(40,-100,-144);
 
 
-    fill(150,150,150,40);
+    fill(150,150,150,30);
+    ambient(255,255,255);
     specular(255,255,255);
     shininess(255);
     PShape winPane1 = createShape(BOX,100,120,2);
@@ -166,6 +173,7 @@ void setupShapes() {
 
     //Main Chair Body
     fill(#A8415B);
+    ambient(#A8415B);
     PShape chair = createShape(GROUP);
     PShape arm1 = createShape(BOX,15,40,80);
     PShape arm2 = createShape(BOX,15,40,80);
@@ -179,16 +187,19 @@ void setupShapes() {
 
     //Blue Cushion
     fill(#506d73);
+    ambient(#506d73);
     PShape bCushion = createShape(BOX,50,5,40);
     bCushion.translate(40,-6,-24);
     bCushion.rotateX(radians(-30));
 
     //Green Backing
     fill(#5a4c32);
+    ambient(#5a4c32);
     PShape backCloth = createShape(BOX,50,30,10);
     backCloth.translate(40,-50,-35);
 
     fill(#deb887);
+    ambient(#deb887);
     //Creating Chair Legs
     PShape leg1 = genCylinder(4,10,20,10);
     leg1.scale(0.4);
@@ -229,10 +240,12 @@ void setupShapes() {
     PShape stool1 = createShape(GROUP);
     //Cushion
     fill(#deb887);
+    ambient(#deb887);
     PShape stoolCushion = genCylinder(20,20,20,10);
     stoolCushion.rotateX(radians(90));
     //Wood
     fill(#55342B);
+    ambient(#55342B);
     PShape stoolBottom = genCylinder(20,19,19,5);
     stoolBottom.rotateX(radians(90));
     stoolBottom.translate(0,7,0);
@@ -255,11 +268,12 @@ void setupShapes() {
     stool1.addChild(sLeg2);
     stool1.addChild(sLeg3);
     stool1.addChild(sLeg4);
-    renderList.add(new RenderObject(new PVector(30,-28,50),0,00,0,stool1));
+    renderList.add(new RenderObject(new PVector(30,-28,65),0,00,0,stool1));
 
     //second chair
     //borrows alot from the stool due to similar design
     fill(#deb887);
+    ambient(#deb887);
     PShape chair2 = createShape(GROUP);
     //Arms
     PShape chair2ArmOne = createShape(BOX,5,25,35);
@@ -281,8 +295,10 @@ void setupShapes() {
     chair2Cushion.rotateX(radians(90));
     //Pillow
     fill(#925e46);
+    ambient(#925e46);
     //Wood
     fill(#55342B);
+    ambient(#55342B);
     PShape chair2Bottom = genCylinder(20,19,19,5);
     chair2Bottom.rotateX(radians(90));
     chair2Bottom.translate(0,7,0);
@@ -311,14 +327,14 @@ void setupShapes() {
     chair2.addChild(chair2Back);
     chair2.addChild(chair2BackWide);
     chair2.addChild(chair2Top);
-    renderList.add(new RenderObject(new PVector(50,-35,-15),0,00,0,chair2));
+    renderList.add(new RenderObject(new PVector(50,-35,5),0,-10,0,chair2));
 }
 
 void setupLights() {
     //Window Light
-    //sceneLights.add(new SpotLight(new PVector(0,-100,-400), 250,213,165, new PVector(0,0.2,-1), PI/2, 0f));
+    sceneLights.add(new SpotLight(new PVector(0,-100,-400), 250,213,165, new PVector(0,0.2,-1), PI/2, 0f));
     //Offscreen Light
-    //sceneLights.add(new SpotLight(new PVector(350,-50,200), 250,213,165, new PVector(-1,0.1,1), PI/32, 0f));
+    sceneLights.add(new SpotLight(new PVector(350,-50,200), 250,213,165, new PVector(-1,0.1,1), PI/32, 0f));
     //Lamp 1
     sceneLights.add(new Light(new PVector(-150,-75,-25),100,100,100));
     //Lamp 2
@@ -345,7 +361,7 @@ void renderBackground() {
         return;
     }
     
-    //Main Linework
+    //Main 3 Axis Linework
     main.fill(255);
     main.sphere(5);
     main.translate(originx, originy, originz);
@@ -360,6 +376,7 @@ void renderBackground() {
     main.line(0, 0, 0, 0, 0, sceneSize);
     main.line(0, 0, 0, 0, 0, -sceneSize);
 
+    //Grid linework
     main.stroke(125);
     main.strokeWeight(1);
     int sqrs = Math.round(sceneSize/squaresSpacing);
