@@ -2,17 +2,17 @@
 PGraphics canvas;
 
 //Controllers (change these to change the effect)
-int depth = 8;
+int depth = 6;
 int startingSize = 16;
 color startingColor = color(255,255,255,255); //White
 color backgroundColor = color(0,0,0,255); //Black
 
-float growthMulti = 1.5;
+float growthMulti = 1;
 int splitFactor = 40;
-int alphaDecay = 30;
-int redDecay = 20;
-int greenDecay = 20;
-int blueDecay = 20;
+int alphaDecay = 0;
+int redDecay = 0;
+int greenDecay = 0;
+int blueDecay = 0;
 
 void setup() {
     size(800,800);
