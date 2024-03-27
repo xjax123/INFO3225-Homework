@@ -1,6 +1,7 @@
 import java.util.HashMap;
 
 HashMap<Character, MapTile> tileMap = new HashMap<Character, MapTile>();
+HashMap<String, MapEntitiy> entityMap = new HashMap<String, MapEntitiy>();
 enum Direction {
     UP,
     DOWN,
@@ -21,18 +22,10 @@ class NavMap {
                     tiles[x][y] = new MapTile();
                 } else {
                     MapTile tile = map.tiles[x][y];
-                    if (tile instanceof DangerTile) {
-                        tiles[x][y] = new DangerTile(tile);
-                    } else {
-                        tiles[x][y] = new MapTile(tile);
-                    }
+                    tiles[x][y] = tileCopy(tile);
                 }
                 if (map.entities[x][y] != null) {
-                    if (map.entities[x][y] instanceof Player) {
-                        entities[x][y] = new Player(map.entities[x][y]);
-                    } else {
-                        entities[x][y] = new MapEntitiy(map.entities[x][y]);
-                    }
+                    entities[x][y] = entityCopy(map.entities[x][y]);
                 }
             }
         }
@@ -49,15 +42,11 @@ class NavMap {
         entities = new MapEntitiy[_mapTiles.length][max];
         for (int x = 0; x < tiles.length; x++) {
             for (int y = 0; y < tiles[x].length; y++) {
-                if (_mapTiles[x][y] == null) {
+                if (_mapTiles[x][y] == null || _mapTiles[x][y] == 'b') {
                     tiles[x][y] = new MapTile();
                 } else {
                     MapTile tile = tileMap.get(_mapTiles[x][y]);
-                    if (tile instanceof DangerTile) {
-                        tiles[x][y] = new DangerTile(tile);
-                    } else {
-                        tiles[x][y] = new MapTile(tile);
-                    }
+                    tiles[x][y] = tileCopy(tile);
                 }
             }
         }
@@ -80,9 +69,11 @@ class NavMap {
         }
         return null;
     }
-    public void registerEntity(MapEntitiy ent) {
-        entities[ent.mapX][ent.mapY] = ent;
-        tiles[ent.mapX][ent.mapY].walkTile(ent);
+    public void registerEntity(MapEntitiy ent, int x, int y) {
+        entities[x][y] = entityCopy(ent);
+        entities[x][y].mapX = x;
+        entities[x][y].mapY = y;
+        tiles[x][y].walkTile(ent);
     }
 
     public void positionEnt(MapEntitiy ent, int newX, int newY) {
@@ -142,9 +133,13 @@ class NavMap {
                     for (int y = 0; y < tiles[x].length; y++) {
                         main.translate(0,0,50);
                         if (entities[x][y] != null) {
-                            main.shape(entities[x][y].shape,0,0);
+                            if (entities[x][y].visible) {
+                                main.shape(entities[x][y].shape,0,0);
+                            }
                         }
-                        main.shape(tiles[x][y].shape,0,0);
+                        if (tiles[x][y].visible) {
+                            main.shape(tiles[x][y].shape,0,0);
+                        }
                     }
                 main.popMatrix();
             }
@@ -172,6 +167,7 @@ class MapTile {
     public Character identifier;
     public PShape shape = createShape();
     public boolean walkable = false;
+    public boolean visible = true;
 
     public MapTile() {
         identifier = 'b';
@@ -189,6 +185,10 @@ class MapTile {
         identifier = id;
         shape = _shape;
         walkable = _walkable;
+    }
+
+    public void setVisible(boolean b) {
+        visible = b;
     }
 
     public void walkTile(MapEntitiy ent) {
@@ -214,9 +214,33 @@ class DangerTile extends MapTile {
         ent.kill();
     }
 }
+class WinTile extends MapTile {
+    public WinTile(MapTile copy) {
+        super(copy);
+    }
+    public WinTile(Character id, PShape _shape) {
+        super(id,_shape,true);
+    }
+
+    @Override
+    public void walkTile(MapEntitiy ent) {
+        manager.nextScene();
+    }
+}
+
+public MapTile tileCopy(MapTile tile) {
+    MapTile mt;
+    if (tile instanceof DangerTile) {
+        mt = new DangerTile(tile);
+    } else if (tile instanceof WinTile) {
+        mt = new WinTile(tile);
+    } else {
+        mt = new MapTile(tile);
+    }
+    return mt;
+}
 
 //Entity Classes & Utils
-
 enum EntState {
     ALIVE,
     DEAD
@@ -226,27 +250,27 @@ class MapEntitiy {
     public int mapX;
     public int mapY;
     public PShape shape;
-    public EntState state;
+    public EntState state = EntState.ALIVE;
+    public boolean visible = true;
 
     public MapEntitiy(MapEntitiy ent) {
         mapX = ent.mapX;
         mapY = ent.mapY;
         shape = ent.shape;
         state = ent.state;
-        shape.setVisible(true);
+        visible = ent.visible;
     }
     public MapEntitiy(int _x, int _y, PShape _shape) {
         mapX = _x;
         mapY = _y;
         shape = _shape;
-        state = EntState.ALIVE;
     }
 
     public void collide() {}
 
     public void kill() {
         state = EntState.DEAD;
-        shape.setVisible(false);
+        visible = false;
     }
 }
 
@@ -257,4 +281,14 @@ class Player extends MapEntitiy{
     public Player(int _x, int _y, PShape _shape) {
         super(_x,_y,_shape);
     }
+}
+
+public MapEntitiy entityCopy(MapEntitiy ent) {
+    MapEntitiy me;
+    if (ent instanceof Player) {
+        me = new Player(ent);
+    } else {
+        me = new MapEntitiy(ent);
+    }
+    return me;
 }

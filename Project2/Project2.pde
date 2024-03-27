@@ -1,3 +1,4 @@
+float camRotY;
 PGraphics main,hud;
 SceneManager manager = new SceneManager();
 String devText = "";
@@ -8,19 +9,21 @@ void setup() {
     main.smooth(8);
     hud = createGraphics(1920,1080,P2D);
     noStroke();
+
+    //Generating Tiles, could in theory be put into a JSON to be loaded for later use.
     fill(50,50,50);
     PShape shape1 = createShape(BOX,50,1,50);
-    MapTile m1 = new MapTile('A',shape1,true);
-    tileMap.put('A',m1);
+    MapTile m1 = new MapTile('T',shape1,true);
+    tileMap.put('T',m1);
     fill(100,100,100);
     PShape shape2 = createShape(BOX,50,1,50);
-    MapTile m2 = new MapTile('B',shape2,true);
-    tileMap.put('B',m2);
-    fill(0,255,0);
+    MapTile m2 = new MapTile('F',shape2,true);
+    tileMap.put('F',m2);
+    fill(25);
     PShape shape3 = createShape(BOX,50,50,50);
     shape3.translate(0,-25,0);
-    MapTile m3 = new MapTile('C',shape3);
-    tileMap.put('C',m3);
+    MapTile m3 = new MapTile('W',shape3);
+    tileMap.put('W',m3);
     emissive(#FFA500);
     fill(0);
     PShape shape4 = createShape(BOX,50,1,50);
@@ -28,64 +31,77 @@ void setup() {
     MapTile m4 = new DangerTile('L',shape4);
     tileMap.put('L',m4);
     emissive(#000000);
+    fill(0,255,0);
+    PShape shape5 = createShape(BOX,50,1,50);
+    MapTile m5 = new WinTile('V',shape5);
+    tileMap.put('V',m5);
 
-
-    Character[][] map1 = 
-    {
-        {'C','L','A','B','A','L'},
-        {'C','L','B','A','B','L'},
-        {'C','B','A','B','A','L'},
-        {'C','L','B','A','B','L'},
-        {'C','L','A','B','A','L'} 
-    };
-    NavMap navmap1 = new NavMap(map1);
-
+    //Generating Entities, could in theory be put into a JSON to be loaded for later use.
     stroke(0);
     fill(255,255,255);
     PShape ent1 = createShape(BOX,50,50,50);
     ent1.translate(0,-26,0);
-    Player e1 = new Player(2,3,ent1);
-    navmap1.registerEntity(e1);
+    Player e1 = new Player(0,0,ent1);
+    entityMap.put("player",e1);
 
+    Character[][] map1 = 
+    {
+        {'W','L','T','F','T','L'},
+        {'W','L','b','b','F','L'},
+        {'W','V','T','F','T','L'},
+        {'W','L','b','b','F','L'},
+        {'W','L','T','F','T','L'} 
+    };
+    NavMap navmap1 = new NavMap(map1);
+    navmap1.registerEntity(entityMap.get("player"),2,3);
     manager.registerMap(navmap1);
 
     Character[][] map2 = 
     {
-        {'A','B','C','B','A','B'},
-        {'B','A','C','A','L','A'},
-        {'A','B','C','B','L','B'},
-        {'B','A','C','A','L','A'},
-        {'A','B','A','B','L','B'} 
+        {'T','V','W','F','T','F'},
+        {'F','T','W','T','L','T'},
+        {'T','F','W','F','L','F'},
+        {'F','T','W','T','L','T'},
+        {'T','F','T','F','L','F'} 
     };
     NavMap navmap2 = new NavMap(map2);
-
-    stroke(0);
-    fill(255,255,255);
-    PShape ent2 = createShape(BOX,50,50,50);
-    ent2.translate(0,-26,0);
-    Player e2 = new Player(2,3,ent2);
-    navmap2.registerEntity(e2);
-
+    navmap2.registerEntity(entityMap.get("player"),2,3);
     manager.registerMap(navmap2);
+
+    Character[][] map3 = 
+    {                   //C
+        {'W','W','T','F','T','b','b','b','V'},
+        {'W','W','F','W','F','T','F','T','F'},
+        {'T','F','T','W','b','b','b','b','b'},
+        {'F','W','W','W','F','T','F','T','F'},
+        {'T','F','T','W','T','b','b','b','T'},//C
+        {'W','W','F','W','b','b','b','b','F'},
+        {'T','F','T','W','T','F','T','b','T'},
+        {'F','W','W','W','F','b','F','b','F'},
+        {'T','F','T','F','T','b','T','F','T'}
+    };
+    NavMap navmap3 = new NavMap(map3);
+    navmap3.registerEntity(entityMap.get("player"),4,4);
+    manager.registerMap(navmap3);
 }
 
 void draw() {
     main.beginDraw();
 
     //Background & Lighting
-    main.background(0,0,0);
+    main.background(90,90,100);
     main.ambientLight(75,75,75);
-    main.directionalLight(150,150,150,1,1,1);
+    main.directionalLight(200,200,200,-1,1,-1);
 
     //Camera
     main.beginCamera();
     main.camera();
     main.translate(1920/2,1080/2,0);
-    main.rotateX(radians(-45));
-    main.rotateY(radians(-10));
+    main.rotateX(radians(-55));
+    main.rotateY(radians(-20+camRotY));
     main.endCamera();
     //scene offset
-    main.translate(-150,0,-100);
+    main.translate(-manager.getActiveMap().tiles.length*0.5*50,0,-manager.getActiveMap().tiles[0].length*0.5*50);
     manager.getActiveMap().drawMap(main);
     main.endDraw();
 
@@ -116,7 +132,16 @@ void keyPressed() {
     if (key == 'd') {
         act.moveEnt(manager.getPlayer(),Direction.RIGHT);
     }
+    if (key == 'r') {
+        manager.reload();
+    }
     if (key == 10) {
         manager.nextScene();
+    }
+    if (camRotY < 0) {
+        camRotY += 360;
+    }
+    if (camRotY > 360) {
+        camRotY -= 360;
     }
 }

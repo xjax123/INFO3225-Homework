@@ -19,6 +19,9 @@ class SceneManager {
     public MapEntitiy getPlayer() {
         return mainChar;
     }
+    public void reload() {
+        setActiveMap(maps.get(mapIndex));
+    }
 
     public void nextScene() {
         if (mapIndex+1 >= maps.size()) {
