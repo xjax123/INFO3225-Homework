@@ -56,6 +56,20 @@ void setupShapes() {
     PShape floor = createShape(BOX,500,8,300);
     floor.translate(0,0,50);
 
+    //Grass
+    fill(#317103);
+    ambient(#317103);
+    PShape grass = createShape(BOX,500,8,500);
+    grass.translate(0,0,-350);
+    generateGrass(2000,setMain,500,500,new PVector(0,0,-350));
+
+    //Trees
+    genTree(setMain,200,20,200,150,100,150, new PVector(-200,0,-500));
+    
+    //Hedge
+    //Suprised the function was versatile enough for this, this needed no tweaking to work.
+    genTree(setMain,0,0,600,50,150,450, new PVector(200,0,-350));
+
     //carpet
     fill(#513e40);
     ambient(#513e40);
@@ -154,6 +168,7 @@ void setupShapes() {
 
 
     setMain.addChild(floor);
+    setMain.addChild(grass);
     setMain.addChild(carpet);
     setMain.addChild(wallMain);
     setMain.addChild(winBottom);
@@ -168,7 +183,6 @@ void setupShapes() {
     setMain.addChild(winPane1);
     setMain.addChild(winPane2);
     setMain.addChild(winPane3);
-    renderList.add(new RenderObject(new PVector(0,2,0),0,0,0,setMain));
 
 
     //Main Chair Body
@@ -328,11 +342,16 @@ void setupShapes() {
     chair2.addChild(chair2BackWide);
     chair2.addChild(chair2Top);
     renderList.add(new RenderObject(new PVector(50,-35,5),0,-10,0,chair2));
+
+    //render the main scene last so the windows work.
+    renderList.add(new RenderObject(new PVector(0,2,0),0,0,0,setMain));
 }
 
 void setupLights() {
+    //Garden Light
+    sceneLights.add(new SpotLight(new PVector(0,-300,-400), 250,213,165, new PVector(0,1,0), PI/2, 0.2f));
     //Window Light
-    sceneLights.add(new SpotLight(new PVector(0,-100,-400), 250,213,165, new PVector(0,0.2,-1), PI/2, 0f));
+    //sceneLights.add(new SpotLight(new PVector(0,-100,-400), 250,213,165, new PVector(0,0.2,-1), PI/2, 0f));
     //Offscreen Light
     sceneLights.add(new SpotLight(new PVector(350,-50,200), 250,213,165, new PVector(-1,0.1,1), PI/32, 0f));
     //Lamp 1
@@ -498,11 +517,11 @@ void mouseDragged(MouseEvent event) {
 void mouseWheel(MouseEvent event) {
     if (event.getCount() > 0) {
         if (camZ >= -400) {
-            camZ -= 10;
+            camZ -= 20;
         }
     } else if (event.getCount() < 0) {
         if (camZ <= 800) {
-            camZ += 10;
+            camZ += 20;
         }
     }
 }
@@ -710,6 +729,63 @@ PShape genHex(PVector b1, PVector b2, PVector b3, PVector b4, PVector t1, PVecto
     finalShape.addChild(s3);
     finalShape.addChild(s4);
     return finalShape;
+}
+
+void generateGrass(float ammount, PShape parent, float areaX, float areaZ, PVector offset) {
+    PShape grassMain = createShape(GROUP);
+    for (int x = 0; x < ammount; x++) {
+        float posX = Math.round(Math.random()*areaX);
+        float posZ = Math.round(Math.random()*areaZ);
+        float height = Math.round(Math.random()*24+6);
+        float width = Math.round(Math.random()*4+1);
+        float rotY = Math.round(Math.random()*360);
+        float rotX = Math.round(Math.random()*30-15);
+        float rotZ = Math.round(Math.random()*30-15);
+        PShape grassBlade = createShape(GROUP);
+        PShape grassStalk = createShape(BOX,width,height,1);
+        PShape grassTop = genHex(new PVector(width*0.5,0,-0.5),new PVector(width*0.5,0,0.5),new PVector(-width*0.5,0,0.5),new PVector(-width*0.5,0,-0.5),new PVector(width*0.2,-3,1),new PVector(width*0.2,-3,1.5),new PVector(-width*0.2,-3,1.5),new PVector(-width*0.2,-3,1));
+        grassTop.translate(0,-height*0.5,0);
+        grassBlade.addChild(grassStalk);
+        grassBlade.addChild(grassTop);
+
+        grassBlade.rotateY(radians(rotY));
+        grassBlade.rotateX(radians(rotX));
+        grassBlade.rotateZ(radians(rotZ));
+        grassBlade.translate(posX,-6,posZ);
+        grassBlade.translate(-areaX*0.5,0,-areaZ*0.5);
+        grassBlade.translate(offset.x,offset.y,offset.z);
+        grassMain.addChild(grassBlade);
+    }
+    parent.addChild(grassMain);
+}
+
+void genTree(PShape parent, float trunkHeight, float trunkWidth, float leavesAmmount, float leafAreaX, float leafAreaY, float leafAreaZ, PVector position) {
+    PShape treeMain = createShape(GROUP);
+    fill(#55342B);
+    PShape trunk = genCylinder(20,trunkWidth,trunkWidth,trunkHeight);
+    trunk.rotateX(radians(90));
+    trunk.translate(0,-trunkHeight*0.5,0);
+    treeMain.addChild(trunk);
+
+    int[] colors = {#608f07,#6f9f05,#84ae09,#91b90c,#a6c70d};
+    PShape leaves = createShape(GROUP);
+    for (int x = 0; x < leavesAmmount; x++) {
+        float posX = Math.round(Math.random()*leafAreaX);
+        float posY = Math.round(Math.random()*leafAreaY);
+        float posZ = Math.round(Math.random()*leafAreaZ);
+        float size = Math.round(Math.random()*20+10);
+        int col = (int) Math.ceil(Math.random()*5-1);
+        fill(colors[col]);
+        PShape leaf = createShape(SPHERE,size);
+        leaf.translate(posX,posY,posZ);
+        leaves.addChild(leaf);
+    }
+    leaves.translate(0,-trunkHeight,0);
+    leaves.translate(-leafAreaX*0.5,-leafAreaY*0.8,-leafAreaZ*0.5);
+    treeMain.addChild(leaves);
+
+    treeMain.translate(position.x,position.y,position.z);
+    parent.addChild(treeMain);
 }
 
 class RenderObject {
