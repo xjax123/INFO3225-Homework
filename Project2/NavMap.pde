@@ -211,6 +211,7 @@ class DangerTile extends MapTile {
 
     @Override
     public void walkTile(MapEntitiy ent) {
+        super.walkTile(ent);
         ent.kill();
     }
 }
@@ -224,6 +225,7 @@ class WinTile extends MapTile {
 
     @Override
     public void walkTile(MapEntitiy ent) {
+        super.walkTile(ent);
         manager.nextScene();
     }
 }
