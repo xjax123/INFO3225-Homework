@@ -125,25 +125,65 @@ class NavMap {
         }
     }
 
+    public boolean checkEnt(MapEntitiy ent, Direction d) {
+        if (ent.state == EntState.DEAD) {
+            return false;
+        }
+
+        if (d == Direction.UP) {
+            int newY = ent.mapY-1;
+            if (inBounds(ent.mapX,newY)) {
+                if (tiles[ent.mapX][newY].walkable) {
+                    return true;
+                }
+            }
+        } else if (d == Direction.DOWN) {
+            int newY = ent.mapY+1;
+            if (inBounds(ent.mapX,newY)) {
+                if (tiles[ent.mapX][newY].walkable) {
+                    return true;
+                }       
+            }
+        } else if (d == Direction.LEFT) {
+            int newX = ent.mapX-1;
+            if (inBounds(newX,ent.mapY)) {
+                if (tiles[newX][ent.mapY].walkable) {
+                    return true;
+                }
+            }
+        } else if (d == Direction.RIGHT) {
+            int newX = ent.mapX+1;
+            if (inBounds(newX,ent.mapY)) {
+                if (tiles[newX][ent.mapY].walkable) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public void drawMap(PGraphics buffer) {
-        main.pushMatrix();
+        buffer.pushMatrix();
             for (int x = 0; x < tiles.length; x++) {
-                main.translate(50,0,0);
-                main.pushMatrix();
+                buffer.translate(50,0,0);
+                buffer.pushMatrix();
                     for (int y = 0; y < tiles[x].length; y++) {
-                        main.translate(0,0,50);
+                        buffer.translate(0,0,50);
                         if (entities[x][y] != null) {
                             if (entities[x][y].visible) {
-                                main.shape(entities[x][y].shape,0,0);
+                                buffer.pushMatrix();
+                                entities[x][y].animate(buffer);
+                                entities[x][y].draw(buffer);
+                                buffer.popMatrix();
                             }
                         }
                         if (tiles[x][y].visible) {
-                            main.shape(tiles[x][y].shape,0,0);
+                            buffer.shape(tiles[x][y].shape,0,0);
                         }
                     }
-                main.popMatrix();
+                buffer.popMatrix();
             }
-        main.popMatrix();
+        buffer.popMatrix();
     }
 
     @Override
@@ -212,7 +252,11 @@ class DangerTile extends MapTile {
     @Override
     public void walkTile(MapEntitiy ent) {
         super.walkTile(ent);
-        ent.kill();
+        try {
+            ent.playAnimation("lavaDeath");
+        } catch (Exception e) {
+            println(e.toString());
+        }
     }
 }
 class WinTile extends MapTile {
@@ -254,6 +298,8 @@ class MapEntitiy {
     public PShape shape;
     public EntState state = EntState.ALIVE;
     public boolean visible = true;
+    public HashMap<String, Animation> animations = new HashMap<String, Animation>();
+    public Animation activeAnimation = null;
 
     public MapEntitiy(MapEntitiy ent) {
         mapX = ent.mapX;
@@ -261,6 +307,7 @@ class MapEntitiy {
         shape = ent.shape;
         state = ent.state;
         visible = ent.visible;
+        animations = ent.animations;
     }
     public MapEntitiy(int _x, int _y, PShape _shape) {
         mapX = _x;
@@ -273,6 +320,35 @@ class MapEntitiy {
     public void kill() {
         state = EntState.DEAD;
         visible = false;
+    }
+
+    public void playAnimation(String t) throws Exception {
+        Animation a = animations.get(t);
+        if (activeAnimation != null && !a.forceInterupt) {
+            if (!activeAnimation.interuptable && !(activeAnimation.state == AnimationState.FINISHED)) {
+                return;
+            }
+        }
+        if (a == null) {
+            throw new Exception("Error: Tried To Invoke Animation That Does Not Exit.");
+        }
+        activeAnimation = new Animation(a);
+        activeAnimation.play();
+    }    
+    public void registerAnimation(String t, Animation a) {
+        animations.put(t,a);
+    }
+
+    public void draw(PGraphics buffer) {
+        buffer.shape(shape,0,0);
+    }
+
+    public void animate(PGraphics buffer) {
+        if (activeAnimation != null) {
+            if (activeAnimation.state != AnimationState.FINISHED) {
+                activeAnimation.step(buffer, this);
+            }
+        }
     }
 }
 
