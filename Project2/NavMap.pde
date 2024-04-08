@@ -375,8 +375,7 @@ class MapEntitiy {
         if (a == null) {
             throw new Exception("Error: Tried To Invoke Animation That Does Not Exit.");
         }
-        println("Finihsed Checks");
-        Animation anim = new Animation(a);
+        Animation anim = new Animation(a);  
         activeAnimations.add(anim);
         anim.play(this);
     }    
