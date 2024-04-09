@@ -19,6 +19,11 @@ class SceneManager {
     public MapEntitiy getPlayer() {
         return mainChar;
     }
+
+    public void playerDeath() {
+        uiManager.loadGroup("death");
+    }
+
     public void reload() {
         setActiveMap(maps.get(mapIndex));
     }

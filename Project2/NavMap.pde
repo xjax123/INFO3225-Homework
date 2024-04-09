@@ -16,10 +16,12 @@ enum AIState {
 }
 
 class NavMap {
+    Color backgroundColor;
     MapTile[][] tiles;
     ArrayList<MapEntitiy> entities = new ArrayList<MapEntitiy>();;
 
     public NavMap(NavMap map) {
+        backgroundColor = map.getBackgroundColor();
         tiles = new MapTile[map.tiles.length][map.tiles[0].length];
         for (int x = 0; x < tiles.length; x++) {
             for (int y = 0; y < tiles[x].length; y++) {
@@ -39,7 +41,8 @@ class NavMap {
         }
     }
 
-    public NavMap(Character[][] _mapTiles) {
+    public NavMap(Color background, Character[][] _mapTiles) {
+        backgroundColor = background;
         int max = 0;
         for (int i = 0; i < _mapTiles.length; i++) {
             if (_mapTiles[i].length > max) {
@@ -57,6 +60,10 @@ class NavMap {
                 }
             }
         }
+    }
+
+    public Color getBackgroundColor() {
+        return backgroundColor;
     }
 
     public boolean inBounds(int x, int y) {
@@ -185,6 +192,7 @@ class NavMap {
     }
 
     public void drawMap(PGraphics buffer) {
+        buffer.background(backgroundColor.red,backgroundColor.green,backgroundColor.blue);
         buffer.pushMatrix();
             for (int x = 0; x < tiles.length; x++) {
                 buffer.translate(50,0,0);
@@ -334,7 +342,7 @@ class MapEntitiy {
     public void walkTile(MapTile tile) {}
 
     public void checkColide(int x, int y) {
-        ArrayList<MapEntitiy> ents = manager.getActiveMap().getEnts(x,y);
+        ArrayList<MapEntitiy> ents = sceneManager.getActiveMap().getEnts(x,y);
         for (MapEntitiy ent : ents) {
             if (ent == this) {
                 break;
@@ -412,6 +420,12 @@ class Player extends MapEntitiy {
     }
 
     @Override
+    public void kill() {
+        super.kill();
+        sceneManager.playerDeath();
+    }
+
+    @Override
     public void collide(MapEntitiy ent) {
         try {
             playAnimation("normalDeath");
@@ -432,7 +446,7 @@ class Player extends MapEntitiy {
             }
         }
         if (tile instanceof WinTile) {
-            manager.nextScene();
+            sceneManager.nextScene();
         }
     }
 }
@@ -496,7 +510,7 @@ class LineEnemy extends AIEntity {
             if (step == moveFreq) {
                 step = 0;
                 ai = AIState.ACTING;
-                if (manager.getActiveMap().checkEnt(this, dir)) {
+                if (sceneManager.getActiveMap().checkEnt(this, dir)) {
                     try {
                         if (dir == Direction.UP) {
                             playAnimation("walkUp");

@@ -76,19 +76,19 @@ public void defineEntities() {
     Player e1 = new Player(0,0,ent1);
     //Designing Animations & Ending functions
     EntFunction walkUp = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.UP);
+        sceneManager.getActiveMap().moveEnt(n,Direction.UP);
         n.checkColide(n.intendedX,n.intendedY);
     };
     EntFunction walkDown = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.DOWN);
+        sceneManager.getActiveMap().moveEnt(n,Direction.DOWN);
         n.checkColide(n.intendedX,n.intendedY);
     };
     EntFunction walkLeft = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.LEFT);
+        sceneManager.getActiveMap().moveEnt(n,Direction.LEFT);
         n.checkColide(n.intendedX,n.intendedY);
     };
     EntFunction walkRight = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.RIGHT);
+        sceneManager.getActiveMap().moveEnt(n,Direction.RIGHT);
         n.checkColide(n.intendedX,n.intendedY);
     };
 
@@ -179,25 +179,25 @@ public void defineEntities() {
         a.ai = AIState.WAITING;
     };
     EntFunction enWalkUp = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.UP);
+        sceneManager.getActiveMap().moveEnt(n,Direction.UP);
         n.checkColide(n.intendedX,n.intendedY);
         AIEntity a = (AIEntity) n;
         a.ai = AIState.WAITING;
     };
     EntFunction enWalkDown = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.DOWN);
+        sceneManager.getActiveMap().moveEnt(n,Direction.DOWN);
         n.checkColide(n.intendedX,n.intendedY);
         AIEntity a = (AIEntity) n;
         a.ai = AIState.WAITING;
     };
     EntFunction enWalkLeft = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.LEFT);
+        sceneManager.getActiveMap().moveEnt(n,Direction.LEFT);
         n.checkColide(n.intendedX,n.intendedY);
         AIEntity a = (AIEntity) n;
         a.ai = AIState.WAITING;
     };
     EntFunction enWalkRight = (n) -> {
-        manager.getActiveMap().moveEnt(n,Direction.RIGHT);
+        sceneManager.getActiveMap().moveEnt(n,Direction.RIGHT);
         n.checkColide(n.intendedX,n.intendedY);
         AIEntity a = (AIEntity) n;
         a.ai = AIState.WAITING;
@@ -318,9 +318,9 @@ public void defineMaps() {
         {'W','T','L','b','F','L'},
         {'W','F','T','F','T','L'} 
     };
-    NavMap navmap1 = new NavMap(map1);
+    NavMap navmap1 = new NavMap(new Color(80,80,100), map1);
     navmap1.registerEntity(entityMap.get("player"),2,3);
-    manager.registerMap(navmap1);
+    sceneManager.registerMap(navmap1);
 
     Character[][] map2 = 
     {
@@ -331,9 +331,9 @@ public void defineMaps() {
         {'F','W','F','L','F'},
         {'T','F','T','L','T'} 
     };
-    NavMap navmap2 = new NavMap(map2);
+    NavMap navmap2 = new NavMap(new Color(70,70,90),map2);
     navmap2.registerEntity(entityMap.get("player"),5,4);
-    manager.registerMap(navmap2);
+    sceneManager.registerMap(navmap2);
 
     Character[][] map3 = 
     {                   //C
@@ -347,9 +347,9 @@ public void defineMaps() {
         {'F','W','W','W','F','b','F','b','F'},
         {'T','F','T','F','T','b','T','F','T'}
     };
-    NavMap navmap3 = new NavMap(map3);
+    NavMap navmap3 = new NavMap(new Color(60,60,70),map3);
     navmap3.registerEntity(entityMap.get("player"),4,4);
-    manager.registerMap(navmap3);
+    sceneManager.registerMap(navmap3);
 
     Character[][] map4 = 
     {                   //C
@@ -363,10 +363,10 @@ public void defineMaps() {
         {'W','W','F','W','F','W','F','W','F'},
         {'W','W','T','W','T','F','T','W','V'}
     };
-    NavMap navmap4 = new NavMap(map4);
+    NavMap navmap4 = new NavMap(new Color(50,50,60),map4);
     navmap4.registerEntity(entityMap.get("downLineEnemy"),4,1);
     navmap4.registerEntity(entityMap.get("player"),8,2);
-    manager.registerMap(navmap4); 
+    sceneManager.registerMap(navmap4); 
 
     Character[][] map5 = 
     {                   //C
@@ -380,13 +380,24 @@ public void defineMaps() {
         {'b','T','L','L','L','L','L','L','L'},
         {'b','F','T','F','T','F','T','F','T'}
     };
-    NavMap navmap5 = new NavMap(map5);
+    NavMap navmap5 = new NavMap(new Color(40,40,50), map5);
     navmap5.registerEntity(entityMap.get("player"),8,7);
     navmap5.registerEntity(entityMap.get("rightLineEnemy"),4,8);
     navmap5.registerEntity(entityMap.get("leftLineEnemy"),8,1);
-    manager.registerMap(navmap5); 
+    sceneManager.registerMap(navmap5); 
 }
 
 public void defineHudElements() {
+    UIText[] devStuff = {new UIText(90000,new PVector(0,64),"",64,new Color(255,255,255)), new UIText(100000,new PVector(0,128),"",64,new Color(255,255,255))};
+    DevGroup g1 = new DevGroup(404,devStuff);
+    uiManager.registerGroup("dev",g1);
 
+    fill(75);
+    PShape deathBacking = createShape(RECT,0,0,425,200,30);
+    UIBody[] deathText = {new UIShape(10,0,new PVector(750,375),deathBacking),new UIText(20,10,new PVector(800+38,400+64),"You Died",64,new Color(255,255,255),2,new Color(0,0,0)),new UIText(30,10,new PVector(800,400+128),"Press Enter To Continue",32,new Color(255,255,255),1,new Color(0,0,0))};
+    OnDeathPopup g2 = new OnDeathPopup(3001,deathText);
+    uiManager.registerGroup("death",g2);
+
+    
+    PShape menuBacking = createShape(RECT,0,0,425,200,30);
 }

@@ -4,17 +4,21 @@ import java.util.Arrays;
 float camRotY;
 PShader lighting;
 PGraphics main,hud;
-SceneManager manager = new SceneManager();
+SceneManager sceneManager = new SceneManager();
+UiManager uiManager = new UiManager();
+UIText posText;
+UIText stateText;
 String devText = "";
 ArrayList<ReferencedLamda> functionManager = new ArrayList<ReferencedLamda>();
 boolean holding = false;
+boolean developerMode = false;
 
 void setup() {
     size(1920,1080,P3D);
     frameRate(60);
     main = createGraphics(1920,1061,P3D);
     main.smooth(8);
-    hud = createGraphics(1920,1080,P2D);
+    hud = createGraphics(1920,1080,P3D);
     noStroke();
 
     //Shaders, still experementing with/testing these
@@ -28,6 +32,10 @@ void setup() {
     lighting.set("viewPos",-200,-650,-400);*/
 
 
+
+    //Generating Hud Elements
+    defineHudElements();
+
     //Generating Tiles, could in theory be put into a JSON to be loaded for later use.
     defineTiles();
 
@@ -36,9 +44,6 @@ void setup() {
 
     //Generating Maps
     defineMaps();
-
-    //Generating Hud Elements
-    defineHudElements();
 }
 
 void draw() {
@@ -49,7 +54,6 @@ void draw() {
     }
 
     //Background & Lighting
-    main.background(50,50,60);
     main.ambientLight(150, 150, 150);
     main.directionalLight(200, 200, 200, -0.2, 1, -0.6);
 
@@ -81,8 +85,9 @@ void draw() {
     main.popMatrix(); */
 
     //translating the scene to the center of the screen & drawing
-    main.translate(-manager.getActiveMap().tiles.length*0.5*50,0,-manager.getActiveMap().tiles[0].length*0.5*50);
+    main.translate(-sceneManager.getActiveMap().tiles.length*0.5*50,0,-sceneManager.getActiveMap().tiles[0].length*0.5*50);
     int size = functionManager.size();
+    //functions that trigger off of animations starting and/or finishing. This forces them into a concurrent space since they were having concurrency issues.
     ArrayList<ReferencedLamda> cleanup = new ArrayList<ReferencedLamda>();
     for(int x = 0; x < size; x++) {
         ReferencedLamda r = functionManager.get(x);
@@ -93,17 +98,20 @@ void draw() {
         functionManager.remove(r);
     }
     cleanup = new ArrayList<ReferencedLamda>();
-    manager.getActiveMap().drawMap(main);
+    //drawing map & entities
+    sceneManager.getActiveMap().drawMap(main);
     main.endDraw();
 
+    //rendering HUD
     hud.beginDraw();
     hud.background(0,0,0,0);
-    hud.noStroke();
-    hud.fill(255, 255, 255);
-    hud.textSize(64);
-    hud.text("Current Pos: "+devText, 0, 64);
-    hud.text("Current State: "+manager.getPlayer().state, 0, 128);
+    if (posText != null && stateText != null) {
+        posText.setText("Current Pos: "+devText);
+        stateText.setText("Current State: "+sceneManager.getPlayer().state);
+    }
+    uiManager.drawUI(hud);
     hud.endDraw();
+    uiManager.cleanup();
 
     image(main,0,0);
     image(hud,0,0);
@@ -111,12 +119,22 @@ void draw() {
 
 void keyPressed() {
     holding = true;
-    if (key == 'r') {
-        manager.reload();
+    uiManager.keyInput(key);
+
+    if (key == '`') {
+        try {
+            if (!developerMode) {
+                developerMode = true;
+                uiManager.loadGroup("dev");
+            } else {
+                developerMode = false;
+                uiManager.removeGroup("dev");
+            }
+        } catch (Exception e) {
+            println(e.toString());
+        }
     }
-    if (key == 10) {
-        manager.nextScene();
-    }
+
     keyHeld();
 }
 
@@ -125,7 +143,7 @@ void keyReleased() {
 }
 
 void keyHeld() {
-    NavMap act = manager.getActiveMap();
+    NavMap act = sceneManager.getActiveMap();
     if (key == 'w') {
         try {
             if (act.checkEnt(act.getPlayer(),Direction.UP)) {

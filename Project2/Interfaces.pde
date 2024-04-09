@@ -2,6 +2,10 @@ interface EntFunction {
     void run(MapEntitiy m);
 }
 
+interface UIFunction {
+    void run();
+}
+
 enum LambdaType {
     START,
     FINISH
