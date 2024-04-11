@@ -431,23 +431,23 @@ class UIButton extends UIBody {
     protected UIFunction clickFunc;
     protected PShape shape;
     protected String text; 
-    public UIShape(UIShape body) {
+    public UIButton(UIShape body) {
         super(body);
         shape = body.getShape();
     }
-    public UIShape(PVector _position, PShape _shape, String _buttonText, UIFunction _onClick) {
+    public UIButton(PVector _position, PShape _shape, String _buttonText, UIFunction _onClick) {
         super(_position);
         shape = _shape;
         text = _buttonText;
         clickFunc = _onClick;
     }   
-    public UIShape(int _id, PVector _position, PShape _shape, String _buttonText, UIFunction _onClick) {
+    public UIButton(int _id, PVector _position, PShape _shape, String _buttonText, UIFunction _onClick) {
         super(_id,_position);
         shape = _shape;
         text = _buttonText;
         clickFunc = _onClick;
     } 
-    public UIShape(int _id, int _layer, PVector _position, PShape _shape, String _buttonText, UIFunction _onClick) {
+    public UIButton(int _id, int _layer, PVector _position, PShape _shape, String _buttonText, UIFunction _onClick) {
         super(_id,_layer,_position);
         shape = _shape;
         text = _buttonText;
@@ -456,12 +456,13 @@ class UIButton extends UIBody {
     public void draw(PGraphics buffer, int layer) {}
 }
 
+/*
 class AABB {
     public x1;
     public x2;
     public y1;
     public y2;
-}
+} */
 
 class Color {
     public int red;
